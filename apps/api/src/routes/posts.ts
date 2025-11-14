@@ -9,6 +9,8 @@ import { requireAuth, optionalAuth } from '../middleware/auth';
 import { rateLimits } from '../middleware/rate-limit';
 import { getDb } from '../services/db.service';
 import { PostService } from '../services/post.service';
+import { LikeService } from '../services/like.service';
+import { BookmarkService } from '../services/bookmark.service';
 import type { Env } from '../index';
 
 export const postRoutes = new Hono<{ Bindings: Env }>();
@@ -521,34 +523,126 @@ postRoutes.get('/:postId/stats', rateLimits.read.standard, async (c) => {
   }
 });
 
-// POST /v1/posts/:postId/like - Like a post (placeholder)
+// POST /v1/posts/:postId/like - Like a post
 postRoutes.post('/:postId/like', requireAuth, rateLimits.social.like, async (c) => {
-  const postId = c.req.param('postId');
-  const userId = c.get('userId');
+  try {
+    const postId = c.req.param('postId');
+    const userId = c.get('userId');
+    const db = getDb(c.env);
+    const likeService = new LikeService(db);
 
-  return c.json({
-    success: true,
-    data: {
-      message: 'Like post endpoint - To be implemented',
-      postId,
-      userId,
-    },
-  });
+    const like = await likeService.likePost(userId, postId);
+
+    return c.json({
+      success: true,
+      data: {
+        like,
+        message: 'Post liked successfully',
+      },
+    });
+  } catch (error: any) {
+    console.error('Like post error:', error);
+
+    if (error.message === 'ALREADY_LIKED') {
+      return c.json({
+        success: false,
+        error: {
+          code: 'ALREADY_LIKED',
+          message: 'You have already liked this post',
+        },
+      }, 400);
+    }
+
+    if (error.message === 'POST_NOT_FOUND') {
+      return c.json({
+        success: false,
+        error: {
+          code: 'POST_NOT_FOUND',
+          message: 'Post not found',
+        },
+      }, 404);
+    }
+
+    return c.json({
+      success: false,
+      error: {
+        code: 'LIKE_FAILED',
+        message: 'Failed to like post',
+      },
+    }, 500);
+  }
 });
 
-// DELETE /v1/posts/:postId/like - Unlike a post (placeholder)
+// DELETE /v1/posts/:postId/like - Unlike a post
 postRoutes.delete('/:postId/like', requireAuth, async (c) => {
-  const postId = c.req.param('postId');
-  const userId = c.get('userId');
+  try {
+    const postId = c.req.param('postId');
+    const userId = c.get('userId');
+    const db = getDb(c.env);
+    const likeService = new LikeService(db);
 
-  return c.json({
-    success: true,
-    data: {
-      message: 'Unlike post endpoint - To be implemented',
-      postId,
-      userId,
-    },
-  });
+    await likeService.unlikePost(userId, postId);
+
+    return c.json({
+      success: true,
+      data: {
+        message: 'Post unliked successfully',
+      },
+    });
+  } catch (error: any) {
+    console.error('Unlike post error:', error);
+
+    if (error.message === 'NOT_LIKED') {
+      return c.json({
+        success: false,
+        error: {
+          code: 'NOT_LIKED',
+          message: 'You have not liked this post',
+        },
+      }, 400);
+    }
+
+    return c.json({
+      success: false,
+      error: {
+        code: 'UNLIKE_FAILED',
+        message: 'Failed to unlike post',
+      },
+    }, 500);
+  }
+});
+
+// GET /v1/posts/:postId/likes - Get post likes
+postRoutes.get('/:postId/likes', rateLimits.read.standard, async (c) => {
+  try {
+    const postId = c.req.param('postId');
+    const limit = Number(c.req.query('limit')) || 20;
+    const offset = Number(c.req.query('offset')) || 0;
+    const db = getDb(c.env);
+    const likeService = new LikeService(db);
+
+    const likes = await likeService.getPostLikes(postId, limit, offset);
+
+    return c.json({
+      success: true,
+      data: {
+        likes,
+        pagination: {
+          limit,
+          offset,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Get post likes error:', error);
+    return c.json({
+      success: false,
+      error: {
+        code: 'FETCH_FAILED',
+        message: 'Failed to fetch post likes',
+      },
+    }, 500);
+  }
 });
 
 // GET /v1/posts/:postId/comments - Get post comments (placeholder)
@@ -580,34 +674,93 @@ postRoutes.post('/:postId/comments', requireAuth, rateLimits.write.comment, asyn
   }, 201);
 });
 
-// POST /v1/posts/:postId/bookmark - Bookmark a post (placeholder)
+// POST /v1/posts/:postId/bookmark - Bookmark a post
 postRoutes.post('/:postId/bookmark', requireAuth, async (c) => {
-  const postId = c.req.param('postId');
-  const userId = c.get('userId');
+  try {
+    const postId = c.req.param('postId');
+    const userId = c.get('userId');
+    const db = getDb(c.env);
+    const bookmarkService = new BookmarkService(db);
 
-  return c.json({
-    success: true,
-    data: {
-      message: 'Bookmark post endpoint - To be implemented',
-      postId,
-      userId,
-    },
-  });
+    const bookmark = await bookmarkService.bookmarkPost(userId, postId);
+
+    return c.json({
+      success: true,
+      data: {
+        bookmark,
+        message: 'Post bookmarked successfully',
+      },
+    });
+  } catch (error: any) {
+    console.error('Bookmark post error:', error);
+
+    if (error.message === 'ALREADY_BOOKMARKED') {
+      return c.json({
+        success: false,
+        error: {
+          code: 'ALREADY_BOOKMARKED',
+          message: 'You have already bookmarked this post',
+        },
+      }, 400);
+    }
+
+    if (error.message === 'POST_NOT_FOUND') {
+      return c.json({
+        success: false,
+        error: {
+          code: 'POST_NOT_FOUND',
+          message: 'Post not found',
+        },
+      }, 404);
+    }
+
+    return c.json({
+      success: false,
+      error: {
+        code: 'BOOKMARK_FAILED',
+        message: 'Failed to bookmark post',
+      },
+    }, 500);
+  }
 });
 
-// DELETE /v1/posts/:postId/bookmark - Remove bookmark (placeholder)
+// DELETE /v1/posts/:postId/bookmark - Remove bookmark
 postRoutes.delete('/:postId/bookmark', requireAuth, async (c) => {
-  const postId = c.req.param('postId');
-  const userId = c.get('userId');
+  try {
+    const postId = c.req.param('postId');
+    const userId = c.get('userId');
+    const db = getDb(c.env);
+    const bookmarkService = new BookmarkService(db);
 
-  return c.json({
-    success: true,
-    data: {
-      message: 'Remove bookmark endpoint - To be implemented',
-      postId,
-      userId,
-    },
-  });
+    await bookmarkService.unbookmarkPost(userId, postId);
+
+    return c.json({
+      success: true,
+      data: {
+        message: 'Bookmark removed successfully',
+      },
+    });
+  } catch (error: any) {
+    console.error('Remove bookmark error:', error);
+
+    if (error.message === 'NOT_BOOKMARKED') {
+      return c.json({
+        success: false,
+        error: {
+          code: 'NOT_BOOKMARKED',
+          message: 'You have not bookmarked this post',
+        },
+      }, 400);
+    }
+
+    return c.json({
+      success: false,
+      error: {
+        code: 'UNBOOKMARK_FAILED',
+        message: 'Failed to remove bookmark',
+      },
+    }, 500);
+  }
 });
 
 // POST /v1/posts/:postId/share - Share a post (placeholder)
