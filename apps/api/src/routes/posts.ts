@@ -4,6 +4,9 @@ import {
   createPostSchema,
   updatePostSchema,
   postFiltersSchema,
+  createCommentSchema,
+  updateCommentSchema,
+  commentFiltersSchema,
 } from '@aksharshruti/validation';
 import { requireAuth, optionalAuth } from '../middleware/auth';
 import { rateLimits } from '../middleware/rate-limit';
@@ -11,6 +14,7 @@ import { getDb } from '../services/db.service';
 import { PostService } from '../services/post.service';
 import { LikeService } from '../services/like.service';
 import { BookmarkService } from '../services/bookmark.service';
+import { CommentService } from '../services/comment.service';
 import type { Env } from '../index';
 
 export const postRoutes = new Hono<{ Bindings: Env }>();
@@ -645,33 +649,221 @@ postRoutes.get('/:postId/likes', rateLimits.read.standard, async (c) => {
   }
 });
 
-// GET /v1/posts/:postId/comments - Get post comments (placeholder)
-postRoutes.get('/:postId/comments', optionalAuth, rateLimits.read.standard, async (c) => {
-  const postId = c.req.param('postId');
+// GET /v1/posts/:postId/comments - Get post comments
+postRoutes.get(
+  '/:postId/comments',
+  optionalAuth,
+  rateLimits.read.standard,
+  zValidator('query', commentFiltersSchema.partial()),
+  async (c) => {
+    try {
+      const postId = c.req.param('postId');
+      const filters = c.req.valid('query');
+      const db = getDb(c.env);
+      const commentService = new CommentService(db);
 
-  return c.json({
-    success: true,
-    data: {
-      message: 'Get comments endpoint - To be implemented',
-      postId,
-      comments: [],
-    },
-  });
-});
+      const comments = await commentService.getPostComments(postId, filters);
 
-// POST /v1/posts/:postId/comments - Add comment (placeholder)
-postRoutes.post('/:postId/comments', requireAuth, rateLimits.write.comment, async (c) => {
-  const postId = c.req.param('postId');
-  const userId = c.get('userId');
+      return c.json({
+        success: true,
+        data: {
+          comments,
+          pagination: {
+            limit: filters.limit || 20,
+            offset: filters.offset || 0,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Get comments error:', error);
+      return c.json({
+        success: false,
+        error: {
+          code: 'FETCH_FAILED',
+          message: 'Failed to fetch comments',
+        },
+      }, 500);
+    }
+  }
+);
 
-  return c.json({
-    success: true,
-    data: {
-      message: 'Add comment endpoint - To be implemented',
-      postId,
-      userId,
-    },
-  }, 201);
+// POST /v1/posts/:postId/comments - Add comment
+postRoutes.post(
+  '/:postId/comments',
+  requireAuth,
+  rateLimits.write.comment,
+  zValidator('json', createCommentSchema),
+  async (c) => {
+    try {
+      const postId = c.req.param('postId');
+      const userId = c.get('userId');
+      const input = c.req.valid('json');
+      const db = getDb(c.env);
+      const commentService = new CommentService(db);
+
+      const comment = await commentService.createComment(userId, postId, input);
+
+      return c.json({
+        success: true,
+        data: {
+          comment,
+        },
+      }, 201);
+    } catch (error: any) {
+      console.error('Create comment error:', error);
+
+      if (error.message === 'POST_NOT_FOUND') {
+        return c.json({
+          success: false,
+          error: {
+            code: 'POST_NOT_FOUND',
+            message: 'Post not found',
+          },
+        }, 404);
+      }
+
+      if (error.message === 'PARENT_COMMENT_NOT_FOUND') {
+        return c.json({
+          success: false,
+          error: {
+            code: 'PARENT_COMMENT_NOT_FOUND',
+            message: 'Parent comment not found',
+          },
+        }, 404);
+      }
+
+      return c.json({
+        success: false,
+        error: {
+          code: 'CREATE_FAILED',
+          message: 'Failed to create comment',
+        },
+      }, 500);
+    }
+  }
+);
+
+// GET /v1/posts/:postId/comments/:commentId/replies - Get comment replies
+postRoutes.get(
+  '/:postId/comments/:commentId/replies',
+  optionalAuth,
+  rateLimits.read.standard,
+  zValidator('query', commentFiltersSchema.partial()),
+  async (c) => {
+    try {
+      const commentId = c.req.param('commentId');
+      const filters = c.req.valid('query');
+      const db = getDb(c.env);
+      const commentService = new CommentService(db);
+
+      const replies = await commentService.getCommentReplies(commentId, filters);
+
+      return c.json({
+        success: true,
+        data: {
+          replies,
+          pagination: {
+            limit: filters.limit || 20,
+            offset: filters.offset || 0,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Get comment replies error:', error);
+      return c.json({
+        success: false,
+        error: {
+          code: 'FETCH_FAILED',
+          message: 'Failed to fetch comment replies',
+        },
+      }, 500);
+    }
+  }
+);
+
+// PATCH /v1/posts/:postId/comments/:commentId - Update comment
+postRoutes.patch(
+  '/:postId/comments/:commentId',
+  requireAuth,
+  rateLimits.write.update,
+  zValidator('json', updateCommentSchema),
+  async (c) => {
+    try {
+      const commentId = c.req.param('commentId');
+      const userId = c.get('userId');
+      const input = c.req.valid('json');
+      const db = getDb(c.env);
+      const commentService = new CommentService(db);
+
+      const updatedComment = await commentService.updateComment(commentId, userId, input);
+
+      return c.json({
+        success: true,
+        data: {
+          comment: updatedComment,
+        },
+      });
+    } catch (error: any) {
+      console.error('Update comment error:', error);
+
+      if (error.message === 'COMMENT_NOT_FOUND') {
+        return c.json({
+          success: false,
+          error: {
+            code: 'COMMENT_NOT_FOUND',
+            message: 'Comment not found or you do not have permission to update it',
+          },
+        }, 404);
+      }
+
+      return c.json({
+        success: false,
+        error: {
+          code: 'UPDATE_FAILED',
+          message: 'Failed to update comment',
+        },
+      }, 500);
+    }
+  }
+);
+
+// DELETE /v1/posts/:postId/comments/:commentId - Delete comment
+postRoutes.delete('/:postId/comments/:commentId', requireAuth, async (c) => {
+  try {
+    const commentId = c.req.param('commentId');
+    const userId = c.get('userId');
+    const db = getDb(c.env);
+    const commentService = new CommentService(db);
+
+    await commentService.deleteComment(commentId, userId);
+
+    return c.json({
+      success: true,
+      data: {
+        message: 'Comment deleted successfully',
+      },
+    });
+  } catch (error: any) {
+    console.error('Delete comment error:', error);
+
+    if (error.message === 'COMMENT_NOT_FOUND') {
+      return c.json({
+        success: false,
+        error: {
+          code: 'COMMENT_NOT_FOUND',
+          message: 'Comment not found or you do not have permission to delete it',
+        },
+      }, 404);
+    }
+
+    return c.json({
+      success: false,
+      error: {
+        code: 'DELETE_FAILED',
+        message: 'Failed to delete comment',
+      },
+    }, 500);
+  }
 });
 
 // POST /v1/posts/:postId/bookmark - Bookmark a post
