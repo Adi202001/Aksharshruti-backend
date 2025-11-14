@@ -1,0 +1,50 @@
+{
+  "name": "aksharshruti-backend",
+  "version": "1.0.0",
+  "description": "Backend services for Aksharshruti - A literary social network for Indian languages",
+  "private": true,
+  "author": "Aksharshruti Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:api": "pnpm --filter @aksharshruti/api dev",
+    "dev:realtime": "pnpm --filter @aksharshruti/realtime dev",
+    "build": "pnpm -r build",
+    "build:api": "pnpm --filter @aksharshruti/api build",
+    "build:realtime": "pnpm --filter @aksharshruti/realtime build",
+    "deploy:api": "pnpm --filter @aksharshruti/api deploy",
+    "deploy:realtime": "pnpm --filter @aksharshruti/realtime deploy",
+    "db:generate": "pnpm --filter @aksharshruti/database generate",
+    "db:migrate": "pnpm --filter @aksharshruti/database migrate",
+    "db:push": "pnpm --filter @aksharshruti/database push",
+    "db:studio": "pnpm --filter @aksharshruti/database studio",
+    "db:seed": "tsx scripts/seed.ts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "pnpm -r exec rm -rf dist .turbo node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

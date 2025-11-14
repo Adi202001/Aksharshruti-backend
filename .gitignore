@@ -1,0 +1,77 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.lcov
+.nyc_output
+
+# Build outputs
+dist
+build
+.next
+.turbo
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.dev.vars
+.wrangler
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Cloudflare
+.wrangler/
+wrangler.toml.backup
+
+# Drizzle
+drizzle/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Misc
+.cache
+.temp
+tmp/
+temp/
+.vercel
+
+# Debug
+.pnpm-debug.log
+
+# Railway
+.railway/

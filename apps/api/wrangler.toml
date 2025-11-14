@@ -1,0 +1,30 @@
+name = "aksharshruti-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Workers Paid plan for production
+# Free tier: 100,000 requests/day
+workers_dev = true
+
+[env.production]
+name = "aksharshruti-api-production"
+route = "api.aksharshruti.com/*"
+
+[env.staging]
+name = "aksharshruti-api-staging"
+
+[env.development]
+name = "aksharshruti-api-dev"
+
+# Secrets (set via: wrangler secret put SECRET_NAME)
+# DATABASE_URL
+# REDIS_URL
+# JWT_SECRET
+# AWS_ACCESS_KEY_ID
+# AWS_SECRET_ACCESS_KEY
+# S3_BUCKET
+# CLOUDFRONT_URL
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
