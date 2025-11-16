@@ -1,0 +1,11 @@
+# Cloudflare Workers Development Variables
+# Copy this file to .dev.vars and fill in your actual values
+
+DATABASE_URL=postgresql://user:password@host:5432/database
+REDIS_URL=https://your-redis-url.upstash.io
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-development
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+S3_BUCKET=aksharshruti-uploads-dev
+CLOUDFRONT_URL=https://your-cloudfront-domain.cloudfront.net
+ENVIRONMENT=development

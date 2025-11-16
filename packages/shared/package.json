@@ -1,0 +1,12 @@
+{
+  "name": "@aksharshruti/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for Aksharshruti",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@aksharshruti/api",
+  "version": "1.0.0",
+  "description": "REST API for Aksharshruti (Cloudflare Workers)",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@hono/zod-validator": "^0.2.1",
+    "@aksharshruti/database": "workspace:*",
+    "@aksharshruti/shared": "workspace:*",
+    "@aksharshruti/validation": "workspace:*",
+    "@neondatabase/serverless": "^0.9.0",
+    "@upstash/redis": "^1.28.0",
+    "drizzle-orm": "^0.29.3",
+    "zod": "^3.22.4",
+    "jose": "^5.2.0",
+    "nanoid": "^5.0.5"
+  },
+  "devDependencies": {
+    "wrangler": "^3.28.0",
+    "@cloudflare/workers-types": "^4.20240129.0"
+  }
+}
